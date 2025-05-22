@@ -20,14 +20,28 @@ type Device struct {
 // fan speeds, voltages, etc.  Use type assertions to check for specific
 // Sensor types and fetch their data.
 type Sensor interface {
-	parse(raw map[string]string) error
+	parse(raw map[string]SensorInfo) error
 	name() string
 	setName(name string)
+	GetPath() string
+	setPath(path string)
+}
+
+// An Input Sensor is a hardware sensor that does have input values, unlike power / Intrusion sensors
+type InputSensor interface {
+	Sensor
+	GetInputPath() string
+	setInputPath(path string)
+}
+
+type SensorInfo struct {
+	Value string
+	Path  string
 }
 
 // parseSensors parses all Sensors from an input raw data slice, produced
 // during a filesystem walk.
-func parseSensors(raw map[string]map[string]string) ([]Sensor, error) {
+func parseSensors(raw map[string]map[string]SensorInfo) ([]Sensor, error) {
 	sensors := make([]Sensor, 0, len(raw))
 	for k, v := range raw {
 		var s Sensor

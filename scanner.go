@@ -39,7 +39,7 @@ func (s *Scanner) Scan() ([]*Device, error) {
 	var devices []*Device
 	for _, p := range paths {
 		d := &Device{}
-		raw := make(map[string]map[string]string, 0)
+		raw := make(map[string]map[string]SensorInfo, 0)
 
 		// Walk filesystem paths to fetch devices and sensors
 		err := s.fs.Walk(p, func(path string, info os.FileInfo, err error) error {
@@ -78,10 +78,13 @@ func (s *Scanner) Scan() ([]*Device, error) {
 
 			// Gather sensor data into map for later processing
 			if _, ok := raw[fs[0]]; !ok {
-				raw[fs[0]] = make(map[string]string, 0)
+				raw[fs[0]] = make(map[string]SensorInfo, 0)
 			}
 
-			raw[fs[0]][fs[1]] = s
+			raw[fs[0]][fs[1]] = SensorInfo{
+				Value: s,
+				Path:  path,
+			}
 			return nil
 		})
 		if err != nil {

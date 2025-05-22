@@ -1,10 +1,15 @@
 package lmsensors
 
+import "path/filepath"
+
 var _ Sensor = &IntrusionSensor{}
 
 // An IntrusionSensor is a Sensor that detects when the machine's chassis
 // has been opened.
 type IntrusionSensor struct {
+	//Path of the sensor
+	Path string
+
 	// The name of the sensor.
 	Name string
 
@@ -15,12 +20,15 @@ type IntrusionSensor struct {
 
 func (s *IntrusionSensor) name() string        { return s.Name }
 func (s *IntrusionSensor) setName(name string) { s.Name = name }
+func (s *IntrusionSensor) GetPath() string     { return s.Path }
+func (s *IntrusionSensor) setPath(path string) { s.Path = path }
 
-func (s *IntrusionSensor) parse(raw map[string]string) error {
+func (s *IntrusionSensor) parse(raw map[string]SensorInfo) error {
 	for k, v := range raw {
+		s.setPath(filepath.Dir(v.Path))
 		switch k {
 		case "alarm":
-			s.Alarm = v != "0"
+			s.Alarm = v.Value != "0"
 		}
 	}
 

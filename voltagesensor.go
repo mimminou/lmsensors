@@ -1,6 +1,7 @@
 package lmsensors
 
 import (
+	"path/filepath"
 	"strconv"
 )
 
@@ -8,6 +9,12 @@ var _ Sensor = &VoltageSensor{}
 
 // A VoltageSensor is a Sensor that detects voltage.
 type VoltageSensor struct {
+	//Path of the sensor
+	Path string
+
+	//path of the sensor input
+	InputPath string
+
 	// The name of the sensor.
 	Name string
 
@@ -29,14 +36,19 @@ type VoltageSensor struct {
 	Maximum float64
 }
 
-func (s *VoltageSensor) name() string        { return s.Name }
-func (s *VoltageSensor) setName(name string) { s.Name = name }
+func (s *VoltageSensor) name() string             { return s.Name }
+func (s *VoltageSensor) setName(name string)      { s.Name = name }
+func (s *VoltageSensor) GetPath() string          { return s.Path }
+func (s *VoltageSensor) setPath(path string)      { s.Path = path }
+func (s *VoltageSensor) GetInputPath() string     { return s.InputPath }
+func (s *VoltageSensor) setInputPath(path string) { s.InputPath = path }
 
-func (s *VoltageSensor) parse(raw map[string]string) error {
+func (s *VoltageSensor) parse(raw map[string]SensorInfo) error {
 	for k, v := range raw {
+		s.setPath(filepath.Dir(v.Path))
 		switch k {
 		case "input", "max":
-			f, err := strconv.ParseFloat(v, 64)
+			f, err := strconv.ParseFloat(v.Value, 64)
 			if err != nil {
 				return err
 			}
@@ -47,15 +59,16 @@ func (s *VoltageSensor) parse(raw map[string]string) error {
 			switch k {
 			case "input":
 				s.Input = f
+				s.setInputPath(v.Path)
 			case "max":
 				s.Maximum = f
 			}
 		case "alarm":
-			s.Alarm = v != "0"
+			s.Alarm = v.Value != "0"
 		case "beep":
-			s.Beep = v != "0"
+			s.Beep = v.Value != "0"
 		case "label":
-			s.Label = v
+			s.Label = v.Value
 		}
 	}
 

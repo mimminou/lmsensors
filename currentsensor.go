@@ -1,6 +1,7 @@
 package lmsensors
 
 import (
+	"path/filepath"
 	"strconv"
 )
 
@@ -8,6 +9,12 @@ var _ Sensor = &CurrentSensor{}
 
 // A CurrentSensor is a Sensor that detects current in Amperes.
 type CurrentSensor struct {
+	//Path of the sensor
+	Path string
+
+	//path of the sensor input
+	InputPath string
+
 	// The name of the sensor.
 	Name string
 
@@ -28,14 +35,19 @@ type CurrentSensor struct {
 	Critical float64
 }
 
-func (s *CurrentSensor) name() string        { return s.Name }
-func (s *CurrentSensor) setName(name string) { s.Name = name }
+func (s *CurrentSensor) name() string             { return s.Name }
+func (s *CurrentSensor) setName(name string)      { s.Name = name }
+func (s *CurrentSensor) GetPath() string          { return s.Path }
+func (s *CurrentSensor) setPath(path string)      { s.Path = path }
+func (s *CurrentSensor) GetInputPath() string     { return s.InputPath }
+func (s *CurrentSensor) setInputPath(path string) { s.InputPath = path }
 
-func (s *CurrentSensor) parse(raw map[string]string) error {
+func (s *CurrentSensor) parse(raw map[string]SensorInfo) error {
 	for k, v := range raw {
+		s.setPath(filepath.Dir(v.Path))
 		switch k {
 		case "crit", "input", "max":
-			f, err := strconv.ParseFloat(v, 64)
+			f, err := strconv.ParseFloat(v.Value, 64)
 			if err != nil {
 				return err
 			}
@@ -48,13 +60,14 @@ func (s *CurrentSensor) parse(raw map[string]string) error {
 				s.Critical = f
 			case "input":
 				s.Input = f
+				s.setInputPath(v.Path)
 			case "max":
 				s.Maximum = f
 			}
 		case "alarm":
-			s.Alarm = v != "0"
+			s.Alarm = v.Value != "0"
 		case "label":
-			s.Label = v
+			s.Label = v.Value
 		}
 	}
 

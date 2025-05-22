@@ -1,6 +1,7 @@
 package lmsensors
 
 import (
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -10,6 +11,9 @@ var _ Sensor = &PowerSensor{}
 // A PowerSensor is a Sensor that detects average electrical power consumption
 // in watts.
 type PowerSensor struct {
+	//Path of the sensor
+	Path string
+
 	// The name of the sensor.
 	Name string
 
@@ -36,12 +40,14 @@ type PowerSensor struct {
 
 func (s *PowerSensor) name() string        { return s.Name }
 func (s *PowerSensor) setName(name string) { s.Name = name }
-
-func (s *PowerSensor) parse(raw map[string]string) error {
+func (s *PowerSensor) GetPath() string     { return s.Path }
+func (s *PowerSensor) setPath(path string) { s.Path = path }
+func (s *PowerSensor) parse(raw map[string]SensorInfo) error {
 	for k, v := range raw {
+		s.setPath(filepath.Dir(v.Path))
 		switch k {
 		case "average":
-			f, err := strconv.ParseFloat(v, 64)
+			f, err := strconv.ParseFloat(v.Value, 64)
 			if err != nil {
 				return err
 			}
@@ -51,20 +57,20 @@ func (s *PowerSensor) parse(raw map[string]string) error {
 			s.Average = f
 		case "average_interval":
 			// Time values in milliseconds
-			d, err := time.ParseDuration(v + "ms")
+			d, err := time.ParseDuration(v.Value + "ms")
 			if err != nil {
 				return err
 			}
 
 			s.AverageInterval = d
 		case "is_battery":
-			s.Battery = v != "0"
+			s.Battery = v.Value != "0"
 		case "model_number":
-			s.ModelNumber = v
+			s.ModelNumber = v.Value
 		case "oem_info":
-			s.OEMInfo = v
+			s.OEMInfo = v.Value
 		case "serial_number":
-			s.SerialNumber = v
+			s.SerialNumber = v.Value
 		}
 	}
 

@@ -1,6 +1,7 @@
 package lmsensors
 
 import (
+	"path/filepath"
 	"strconv"
 )
 
@@ -24,6 +25,12 @@ var _ Sensor = &TemperatureSensor{}
 // A TemperatureSensor is a Sensor that detects temperatures in degrees
 // Celsius.
 type TemperatureSensor struct {
+	//Path of the sensor
+	Path string
+
+	//path of the sensor input
+	InputPath string
+
 	// The name of the sensor.
 	Name string
 
@@ -56,14 +63,19 @@ type TemperatureSensor struct {
 	CriticalAlarm bool
 }
 
-func (s *TemperatureSensor) name() string        { return s.Name }
-func (s *TemperatureSensor) setName(name string) { s.Name = name }
+func (s *TemperatureSensor) name() string             { return s.Name }
+func (s *TemperatureSensor) setName(name string)      { s.Name = name }
+func (s *TemperatureSensor) GetPath() string          { return s.Path }
+func (s *TemperatureSensor) GetInputPath() string     { return s.InputPath }
+func (s *TemperatureSensor) setPath(path string)      { s.Path = path }
+func (s *TemperatureSensor) setInputPath(path string) { s.InputPath = path }
 
-func (s *TemperatureSensor) parse(raw map[string]string) error {
+func (s *TemperatureSensor) parse(raw map[string]SensorInfo) error {
 	for k, v := range raw {
+		s.setPath(filepath.Dir(v.Path))
 		switch k {
 		case "input", "crit", "max":
-			f, err := strconv.ParseFloat(v, 64)
+			f, err := strconv.ParseFloat(v.Value, 64)
 			if err != nil {
 				return err
 			}
@@ -74,26 +86,27 @@ func (s *TemperatureSensor) parse(raw map[string]string) error {
 			switch k {
 			case "input":
 				s.Input = f
+				s.setInputPath(v.Path)
 			case "crit":
 				s.Critical = f
 			case "max":
 				s.High = f
 			}
 		case "alarm":
-			s.Alarm = v != "0"
+			s.Alarm = v.Value != "0"
 		case "beep":
-			s.Beep = v != "0"
+			s.Beep = v.Value != "0"
 		case "type":
-			t, err := strconv.Atoi(v)
+			t, err := strconv.Atoi(v.Value)
 			if err != nil {
 				return err
 			}
 
 			s.Type = TemperatureSensorType(t)
 		case "crit_alarm":
-			s.CriticalAlarm = v != "0"
+			s.CriticalAlarm = v.Value != "0"
 		case "label":
-			s.Label = v
+			s.Label = v.Value
 		}
 	}
 
